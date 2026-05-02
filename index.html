@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASP.NET Core MVC Study Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-mark">C#</span>
+      <div>
+        <div class="logo-title">ASP.NET</div>
+        <div class="logo-subtitle">MVC Study Site</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#home" class="nav-item active" data-page="home">Overview</a>
+      <a href="#basics" class="nav-item" data-page="basics">MVC Basics</a>
+      <a href="#models" class="nav-item" data-page="models">Models & Annotations</a>
+      <a href="#crud" class="nav-item" data-page="crud">CRUD Operations</a>
+      <a href="#taghelpers" class="nav-item" data-page="taghelpers">Tag Helpers</a>
+      <a href="#razor" class="nav-item" data-page="razor">Razor Views</a>
+      <a href="#efcore" class="nav-item" data-page="efcore">EF Core</a>
+      <a href="#relations" class="nav-item" data-page="relations">Relationships</a>
+      <a href="#compare" class="nav-item" data-page="compare">In-Memory vs DB</a>
+      <a href="#demo" class="nav-item" data-page="demo">Interactive Demo</a>
+      <a href="#quiz" class="nav-item" data-page="quiz">Quiz</a>
+      <a href="#glossary" class="nav-item" data-page="glossary">Glossary</a>
+    </nav>
+    <div class="sidebar-progress">
+      <div class="progress-label">Progress <span id="progress-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </aside>
+
+  <header class="mobile-header">
+    <button class="hamburger" id="hamburger" aria-label="Open menu">&#9776;</button>
+    <span class="mobile-title">ASP.NET MVC Study Guide</span>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">Theme</button>
+  </header>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <main class="main" id="main">
+    <section class="page active" id="home">
+      <div class="hero">
+        <canvas id="particles"></canvas>
+        <div class="hero-content">
+          <div class="hero-badge">Static interactive guide built from your study projects</div>
+          <h1>ASP.NET Core MVC<br /><span class="gradient-text">from models to CRUD to EF Core</span></h1>
+          <p class="hero-sub">
+            This site condenses the patterns shown in `EmployeeDemo`, `StudentsManagement`, `Company`, and `TestDB`
+            into one browser-based study guide with real code, a live CRUD simulator, a quiz, and a glossary.
+          </p>
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="goTo('basics')">Start with MVC</button>
+            <button class="btn-ghost" onclick="goTo('demo')">Open Live Demo</button>
+          </div>
+          <div class="hero-stats">
+            <div class="stat"><span class="stat-num">10</span><span class="stat-label">Core Topics</span></div>
+            <div class="stat"><span class="stat-num">40+</span><span class="stat-label">Quiz Items</span></div>
+            <div class="stat"><span class="stat-num">40+</span><span class="stat-label">Glossary Terms</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-pad">
+        <h2 class="section-title">Learning Map</h2>
+        <div class="cards-grid" id="topic-cards"></div>
+      </div>
+    </section>
+
+    <section class="page" id="basics">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">01</span>
+          <h1>ASP.NET Core MVC Basics</h1>
+          <p>Understand routing, `Program.cs`, `IActionResult`, and how requests move from controller to view.</p>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>MVC Flow</h3>
+            <div class="mvc-diagram">
+              <div class="mvc-box">Model<br /><small>Data + validation rules</small></div>
+              <div class="mvc-arrow">→</div>
+              <div class="mvc-box">Controller<br /><small>Handles requests</small></div>
+              <div class="mvc-arrow">→</div>
+              <div class="mvc-box">View<br /><small>Renders HTML</small></div>
+            </div>
+            <p class="muted">A request hits a route, the controller runs logic, and the view returns HTML using model data.</p>
+          </article>
+
+          <article class="panel">
+            <h3>Key Ideas</h3>
+            <ul class="bullet-list">
+              <li>`{controller}/{action}/{id?}` is the standard route pattern.</li>
+              <li>`IActionResult` lets one action return a view, redirect, JSON, or `NotFound()`.</li>
+              <li>`AddControllersWithViews()` registers MVC services.</li>
+              <li>`MapControllerRoute()` wires the route table in `Program.cs`.</li>
+            </ul>
+          </article>
+        </div>
+
+        <article class="panel">
+          <h3>Real `Program.cs` Pattern From `TestDB`</h3>
+          <pre><code>using TestDB.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace TestDB
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddControllersWithViews();
+            builder.Services.AddDbContext&lt;StudentDBContext&gt;(option =&gt;
+                option.UseSqlServer(builder.Configuration.GetConnectionString("SQLCON")));
+
+            var app = builder.Build();
+
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.Run();
+        }
+    }
+}</code></pre>
+        </article>
+
+        <div class="content-grid three">
+          <article class="panel">
+            <h3>`return View()`</h3>
+            <p>Used when you want to render a Razor page and optionally pass model data into it.</p>
+          </article>
+          <article class="panel">
+            <h3>`RedirectToAction()`</h3>
+            <p>Used after POST actions like Create or Edit to prevent reposting the same form.</p>
+          </article>
+          <article class="panel">
+            <h3>`NotFound()`</h3>
+            <p>Used when an id does not match any existing item, like `Details(99)` on an empty list.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="models">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">02</span>
+          <h1>Models & Data Annotations</h1>
+          <p>The `EmployeeDemo` model is the main validation example. Data annotations drive server validation and UI labels.</p>
+        </div>
+
+        <article class="panel">
+          <h3>Real Employee Model Excerpt</h3>
+          <pre><code>public class Employee
+{
+    public int Id { get; set; }
+
+    [Required(ErrorMessage = "First name is require.")]
+    [StringLength(20, MinimumLength = 2, ErrorMessage ="Name between 2 and 20.")]
+    [Display(Name = "First Name", Prompt ="e.g. Faris")]
+    public string? FirstName { get; set; }
+
+    [Required(ErrorMessage ="Email is require.")]
+    [EmailAddress(ErrorMessage ="Invalid email formal.")]
+    [Display(Name ="Email Address")]
+    public string? Email { get; set; }
+
+    [Required(ErrorMessage ="Salary is required.")]
+    [Range(10000, 50000, ErrorMessage = "Salary between 10K and 50K.")]
+    [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = true)]
+    public decimal Salary { get; set; }
+
+    [DataType(DataType.Date)]
+    public DateTime HireDate { get; set; }
+
+    [DataType(DataType.Password)]
+    public string? Password { get; set; }
+
+    [Compare("Password", ErrorMessage ="Password and confired pass must be the same.")]
+    public string? ConfirmPassword { get; set; }
+}</code></pre>
+        </article>
+
+        <div class="cards-grid">
+          <article class="annotation-card">
+            <h3>`[Required]`</h3>
+            <p>Rejects empty values for important fields like names, email, salary, and dates.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[StringLength]`</h3>
+            <p>Sets minimum and maximum character lengths. In the project, names must be 2 to 20 characters.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[EmailAddress]`</h3>
+            <p>Checks whether the submitted string looks like a valid email address.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[Range]`</h3>
+            <p>Restricts numeric values. The sample salary rule is between 10000 and 50000.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[Display]`</h3>
+            <p>Controls label text and prompt text shown in forms.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[DataType]`</h3>
+            <p>Hints to the UI how to render values, such as `Date` or `Password` fields.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[Compare]`</h3>
+            <p>Compares one property to another. Here it makes confirm password match password.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`[DisplayFormat]`</h3>
+            <p>Controls output formatting, such as currency display for salary.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="crud">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">03</span>
+          <h1>CRUD Operations</h1>
+          <p>`EmployeesController` shows the full in-memory CRUD cycle: list, create, edit, details, and delete.</p>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>Controller Pattern</h3>
+            <ul class="bullet-list">
+              <li>`Index()` returns the full list.</li>
+              <li>`Details(id)` finds one employee or returns `NotFound()`.</li>
+              <li>`Create()` GET shows the form.</li>
+              <li>`Create(Employee employee)` POST saves when `ModelState.IsValid` is true.</li>
+              <li>`Edit(id)` GET loads existing data.</li>
+              <li>`Edit(id, updatedEmployee)` POST updates each property.</li>
+              <li>`Delete(id)` GET shows a confirmation page.</li>
+              <li>`Delete(Employee employeeToDelete)` POST removes the item.</li>
+            </ul>
+          </article>
+
+          <article class="panel">
+            <h3>Why `ModelState.IsValid` Matters</h3>
+            <p>
+              Validation attributes run during model binding. If any rule fails, MVC keeps the invalid values,
+              repopulates the form, and exposes error messages to the view. Only valid data should modify the list or database.
+            </p>
+          </article>
+        </div>
+
+        <article class="panel">
+          <h3>Real `EmployeesController` Excerpt</h3>
+          <pre><code>public IActionResult Create(Employee employee)
+{
+    if (ModelState.IsValid)
+    {
+        employee.Id = employees.Max(e =&gt; e.Id) + 1;
+        employees.Add(employee);
+        return RedirectToAction(nameof(Index));
+    }
+    return View(employee);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult Edit(int id, Employee updatedEmployee)
+{
+    var existingEmployee = employees.FirstOrDefault(e =&gt; e.Id == id);
+    if (existingEmployee == null)
+    {
+        return NotFound();
+    }
+
+    if (ModelState.IsValid)
+    {
+        existingEmployee.FirstName = updatedEmployee.FirstName;
+        existingEmployee.LastName = updatedEmployee.LastName;
+        existingEmployee.Email = updatedEmployee.Email;
+        existingEmployee.Salary = updatedEmployee.Salary;
+        existingEmployee.Mode = updatedEmployee.Mode;
+        return RedirectToAction(nameof(Index));
+    }
+    return View(updatedEmployee);
+}</code></pre>
+        </article>
+
+        <article class="panel">
+          <h3>List View Pattern</h3>
+          <pre><code>@model IEnumerable&lt;EmployeeDemo.Models.Employee&gt;
+
+&lt;table class="table table-striped"&gt;
+    &lt;tbody&gt;
+        @foreach (var employee in Model)
+        {
+            &lt;tr&gt;
+                &lt;td&gt;@employee.FirstName&lt;/td&gt;
+                &lt;td&gt;@employee.LastName&lt;/td&gt;
+                &lt;td&gt;@employee.Email&lt;/td&gt;
+                &lt;td&gt;
+                    &lt;a asp-action="Details" asp-route-id="@employee.Id"&gt;Details&lt;/a&gt;
+                    &lt;a asp-action="Edit" asp-route-id="@employee.Id"&gt;Edit&lt;/a&gt;
+                    &lt;a asp-action="Delete" asp-route-id="@employee.Id"&gt;Delete&lt;/a&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+        }
+    &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="page" id="taghelpers">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">04</span>
+          <h1>Tag Helpers</h1>
+          <p>Tag Helpers let normal HTML elements understand MVC concepts like routing, model binding, and validation.</p>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>Common Tag Helpers</h3>
+            <ul class="bullet-list">
+              <li>`asp-for` binds an input or label to a model property.</li>
+              <li>`asp-action` builds a URL for a controller action.</li>
+              <li>`asp-controller` targets a different controller when needed.</li>
+              <li>`asp-route-id` passes route values like primary keys.</li>
+              <li>`asp-validation-for` prints field-level validation messages.</li>
+              <li>`asp-validation-summary` shows model-level errors.</li>
+            </ul>
+          </article>
+
+          <article class="panel">
+            <h3>`_ViewImports.cshtml`</h3>
+            <pre><code>@using EmployeeDemo
+@using EmployeeDemo.Models
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers</code></pre>
+            <p class="muted">Without `@addTagHelper`, `asp-for` and the other MVC helpers will not activate in Razor views.</p>
+          </article>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>Plain HTML</h3>
+            <pre><code>&lt;label&gt;First Name&lt;/label&gt;
+&lt;input name="FirstName" /&gt;
+&lt;span class="text-danger"&gt;&lt;/span&gt;</code></pre>
+          </article>
+          <article class="panel">
+            <h3>Razor With Tag Helpers</h3>
+            <pre><code>&lt;label asp-for="FirstName"&gt;&lt;/label&gt;
+&lt;input asp-for="FirstName" class="form-control" /&gt;
+&lt;span asp-validation-for="FirstName" class="text-danger"&gt;&lt;/span&gt;</code></pre>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="razor">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">05</span>
+          <h1>Razor Views</h1>
+          <p>Razor combines HTML with C# syntax so a controller can pass model data into a dynamic page.</p>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>Real `StudentsController` Pattern</h3>
+            <pre><code>private static List&lt;Student&gt; students = new List&lt;Student&gt;
+{
+    new Student{Id=1, Name="Faris", Program="SWE", Email="f@asu.edu.jo", EnrollmentDate=DateTime.Now },
+    new Student{Id=2, Name="Ahmad", Program="CS", Email="a@asu.edu.jo", EnrollmentDate=DateTime.Now },
+    new Student{Id=3, Name="Sami", Program="Cyber", Email="f@asu.edu.jo", EnrollmentDate=DateTime.Now },
+};
+
+public IActionResult Index()
+{
+    return View(students);
+}</code></pre>
+          </article>
+
+          <article class="panel">
+            <h3>Real Razor List View</h3>
+            <pre><code>@model IEnumerable&lt;StudentsManagement.Models.Student&gt;
+
+&lt;tbody&gt;
+    @foreach (var element in Model)
+    {
+        &lt;tr&gt;
+            &lt;td&gt;@element.Id&lt;/td&gt;
+            &lt;td&gt;@element.Name&lt;/td&gt;
+            &lt;td&gt;@element.Email&lt;/td&gt;
+            &lt;td&gt;@element.Program&lt;/td&gt;
+        &lt;/tr&gt;
+    }
+&lt;/tbody&gt;</code></pre>
+          </article>
+        </div>
+
+        <div class="cards-grid">
+          <article class="annotation-card">
+            <h3>`@model`</h3>
+            <p>Declares the type the view expects, such as `IEnumerable&lt;Student&gt;`.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`@Model`</h3>
+            <p>Gives access to the strongly typed object passed from the controller.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`@foreach`</h3>
+            <p>Loops over items from the model to render rows or cards.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`@if`</h3>
+            <p>Shows conditional UI, such as a warning when a list is empty.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`@{ }`</h3>
+            <p>Embeds a block of C# statements inside a Razor view.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`ViewData["Title"]`</h3>
+            <p>Sets shared values consumed by the layout page.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`_Layout.cshtml`</h3>
+            <p>Defines the shared shell: header, footer, and `RenderBody()` area.</p>
+          </article>
+          <article class="annotation-card">
+            <h3>`@section Scripts`</h3>
+            <p>Lets a view inject page-specific scripts into the layout.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="efcore">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">06</span>
+          <h1>Entity Framework Core</h1>
+          <p>`TestDB` shows how to move from a static list to a real SQL Server-backed application.</p>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>`DbContext` and `DbSet`</h3>
+            <pre><code>public class StudentDBContext : DbContext
+{
+    public StudentDBContext(DbContextOptions&lt;StudentDBContext&gt; options) : base(options)
+    {
+    }
+
+    public DbSet&lt;Student&gt; students { get; set; }
+}</code></pre>
+          </article>
+
+          <article class="panel">
+            <h3>Model Used By EF Core</h3>
+            <pre><code>public class Student
+{
+    [Key]
+    public int StudentId { get; set; }
+    public string? StudentName { get; set; }
+    public string? Program { get; set; }
+}</code></pre>
+          </article>
+        </div>
+
+        <article class="panel">
+          <h3>Migration Output</h3>
+          <pre><code>migrationBuilder.CreateTable(
+    name: "students",
+    columns: table =&gt; new
+    {
+        StudentId = table.Column&lt;int&gt;(type: "int", nullable: false)
+            .Annotation("SqlServer:Identity", "1, 1"),
+        StudentName = table.Column&lt;string&gt;(type: "nvarchar(max)", nullable: true),
+        Program = table.Column&lt;string&gt;(type: "nvarchar(max)", nullable: true)
+    },
+    constraints: table =&gt;
+    {
+        table.PrimaryKey("PK_students", x =&gt; x.StudentId);
+    });</code></pre>
+        </article>
+
+        <div class="content-grid three">
+          <article class="panel">
+            <h3>`Add-Migration m1`</h3>
+            <p>Generates a migration class based on model changes.</p>
+          </article>
+          <article class="panel">
+            <h3>`Update-Database`</h3>
+            <p>Applies pending migrations to SQL Server.</p>
+          </article>
+          <article class="panel">
+            <h3>Connection String</h3>
+            <p>`UseSqlServer(builder.Configuration.GetConnectionString("SQLCON"))` reads the connection from configuration.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="relations">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">07</span>
+          <h1>Relationships</h1>
+          <p>The `Company` project demonstrates a one-to-many relationship: one department can have many employees.</p>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>Real `Department` Model</h3>
+            <pre><code>public class Department
+{
+    [Key]
+    public int DeptId { get; set; }
+    public string? DeptName { get; set; }
+    public IEnumerable&lt;Employee&gt;? employees { get; set; }
+}</code></pre>
+          </article>
+
+          <article class="panel">
+            <h3>Real `Employee` Model</h3>
+            <pre><code>public class Employee
+{
+    [Key]
+    public int EmpId { get; set; }
+    public string? EmpName { get; set; }
+    public int DeptId { get; set; }
+    public Department? Department { get; set; }
+}</code></pre>
+          </article>
+        </div>
+
+        <div class="content-grid two">
+          <article class="panel">
+            <h3>How EF Understands This</h3>
+            <ul class="bullet-list">
+              <li>`DeptId` acts as the foreign key by naming convention.</li>
+              <li>`Department` is the reference navigation property.</li>
+              <li>`IEnumerable&lt;Employee&gt;` is the collection navigation property.</li>
+              <li>`[Key]` marks the primary key field explicitly.</li>
+            </ul>
+          </article>
+
+          <article class="panel">
+            <h3>Eager Loading</h3>
+            <pre><code>var departments = context.Departments
+    .Include(d =&gt; d.employees)
+    .ToList();</code></pre>
+            <p class="muted">`Include()` loads related records in the same query instead of deferring them.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="compare">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">08</span>
+          <h1>In-Memory vs Database</h1>
+          <p>Your projects show both approaches, which makes them useful for comparing early learning setups against production-style persistence.</p>
+        </div>
+
+        <div class="comparison-grid">
+          <article class="panel">
+            <h3>In-Memory List</h3>
+            <ul class="bullet-list">
+              <li>Fastest way to learn MVC actions and views.</li>
+              <li>No database setup required.</li>
+              <li>Data resets whenever the app restarts.</li>
+              <li>Good for demos, labs, and early CRUD practice.</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h3>EF Core + SQL Server</h3>
+            <ul class="bullet-list">
+              <li>Data persists between runs.</li>
+              <li>Supports relationships, migrations, and querying.</li>
+              <li>Needs configuration, connection strings, and schema management.</li>
+              <li>Closer to real production projects.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="demo">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">09</span>
+          <h1>Interactive Employee CRUD Demo</h1>
+          <p>This runs entirely in the browser but mirrors the same validation ideas from the real C# model.</p>
+        </div>
+
+        <div class="demo-grid">
+          <article class="panel">
+            <h3 id="form-title">Create Employee</h3>
+            <form id="employee-form" class="form-stack">
+              <input type="hidden" id="employee-id" />
+              <label>
+                First Name
+                <input id="first-name" type="text" placeholder="e.g. Faris" />
+              </label>
+              <label>
+                Last Name
+                <input id="last-name" type="text" placeholder="e.g. Taweel" />
+              </label>
+              <label>
+                Email
+                <input id="email" type="email" placeholder="f@company.com" />
+              </label>
+              <label>
+                Department
+                <input id="department" type="text" placeholder="IT" />
+              </label>
+              <label>
+                Salary
+                <input id="salary" type="number" min="10000" max="50000" step="1000" />
+              </label>
+              <label>
+                Hire Date
+                <input id="hire-date" type="date" />
+              </label>
+              <label>
+                Password
+                <input id="password" type="password" />
+              </label>
+              <label>
+                Confirm Password
+                <input id="confirm-password" type="password" />
+              </label>
+              <label>
+                Hire Mode
+                <select id="mode">
+                  <option value="Contract">Contract</option>
+                  <option value="Permanent">Permanent</option>
+                </select>
+              </label>
+
+              <div class="form-errors" id="form-errors"></div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">Save Employee</button>
+                <button type="button" class="btn-ghost dark" id="cancel-edit">Reset</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h3>Current Employees</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>Mode</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="employee-table-body"></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="quiz">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">10</span>
+          <h1>Quiz</h1>
+          <p>Check whether the MVC, Razor, CRUD, EF Core, and relationship patterns are actually sticking.</p>
+        </div>
+
+        <div class="panel">
+          <div class="quiz-toolbar">
+            <button class="btn-primary" id="start-quiz">Start Quiz</button>
+            <select id="quiz-filter">
+              <option value="all">All Topics</option>
+              <option value="basics">MVC Basics</option>
+              <option value="models">Models</option>
+              <option value="crud">CRUD</option>
+              <option value="taghelpers">Tag Helpers</option>
+              <option value="razor">Razor</option>
+              <option value="efcore">EF Core</option>
+              <option value="relations">Relationships</option>
+            </select>
+          </div>
+          <div id="quiz-area"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="glossary">
+      <div class="section-pad">
+        <div class="chapter-hero">
+          <span class="eyebrow">11</span>
+          <h1>Glossary</h1>
+          <p>Short definitions for the terms that keep appearing across the projects.</p>
+        </div>
+        <div class="panel">
+          <input id="glossary-search" class="search-input" type="text" placeholder="Search a term..." />
+          <div id="glossary-grid" class="glossary-grid"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
