@@ -10,6 +10,10 @@ const TOPICS = [
   { id: 'relations', title: 'Relationships', desc: 'Department to employees one-to-many modeling and eager loading.' },
   { id: 'compare', title: 'In-Memory vs DB', desc: 'When a static list is enough and when persistence matters.' },
   { id: 'demo', title: 'Interactive Demo', desc: 'A browser-only employee CRUD simulator with validation.' },
+  { id: 'routinglab', title: 'Routing Lab', desc: 'Type URLs and see which controller, action, and id MVC would select.' },
+  { id: 'migrationlab', title: 'Migration Lab', desc: 'Build a model change and see the migration command flow.' },
+  { id: 'validationlab', title: 'Validation Trainer', desc: 'Practice Data Annotation rules with instant model-state feedback.' },
+  { id: 'efquerylab', title: 'EF Query Builder', desc: 'Compose common EF Core Include, Where, OrderBy, and Select patterns.' },
   { id: 'quiz', title: 'Quiz & Glossary', desc: 'Knowledge checks and quick definitions for recurring ASP.NET terms.' }
 ];
 
@@ -482,6 +486,93 @@ function initEvents() {
   document.getElementById('glossary-search').addEventListener('input', renderGlossary);
 }
 
+function injectPracticeLabs() {
+  const nav = document.querySelector('.sidebar-nav');
+  const quizLink = document.querySelector('[data-page="quiz"]');
+  ['routinglab', 'migrationlab', 'validationlab', 'efquerylab'].forEach(id => {
+    if (!document.querySelector(`[data-page="${id}"]`)) {
+      const topic = TOPICS.find(t => t.id === id);
+      const link = document.createElement('a');
+      link.href = `#${id}`;
+      link.className = 'nav-item';
+      link.dataset.page = id;
+      link.textContent = topic.title;
+      nav.insertBefore(link, quizLink);
+    }
+  });
+
+  const main = document.getElementById('main');
+  const quiz = document.getElementById('quiz');
+  if (document.getElementById('routinglab')) return;
+
+  main.insertBefore(htmlToElement(`<section class="page" id="routinglab"><div class="section-pad"><div class="chapter-hero"><span class="eyebrow">10</span><h1>Routing Lab</h1><p>Type an MVC URL and inspect the controller, action, and optional id that conventional routing would infer.</p></div><div class="content-grid two"><article class="panel"><h3>Try A Route</h3><label class="form-label">URL path<input id="route-input" type="text" value="/Employees/Edit/5"></label><button class="btn-primary" onclick="parseMvcRoute()">Parse Route</button></article><article class="panel"><h3>Route Result</h3><div id="route-result" class="result-box"></div></article></div></div></section>`), quiz);
+  main.insertBefore(htmlToElement(`<section class="page" id="migrationlab"><div class="section-pad"><div class="chapter-hero"><span class="eyebrow">11</span><h1>Migration Lab</h1><p>Select a model change and see the EF Core commands and migration effect.</p></div><div class="content-grid two"><article class="panel"><h3>Model Change</h3><label class="check-row"><input type="radio" name="migration-choice" value="add" checked> Add Student.Email</label><label class="check-row"><input type="radio" name="migration-choice" value="rename"> Rename Program to Major</label><label class="check-row"><input type="radio" name="migration-choice" value="relation"> Add Department relationship</label><button class="btn-primary" onclick="renderMigrationPlan()">Build Migration Plan</button></article><article class="panel"><h3>Generated Plan</h3><pre><code id="migration-result"></code></pre></article></div></div></section>`), quiz);
+  main.insertBefore(htmlToElement(`<section class="page" id="validationlab"><div class="section-pad"><div class="chapter-hero"><span class="eyebrow">12</span><h1>Validation Trainer</h1><p>Practice the same Data Annotation rules used by the Employee model.</p></div><div class="content-grid two"><article class="panel"><h3>Employee Input</h3><label class="form-label">First name<input id="val-first" value="A"></label><label class="form-label">Email<input id="val-email" value="bad-email"></label><label class="form-label">Salary<input id="val-salary" type="number" value="9000"></label><label class="form-label">Password<input id="val-pass" type="password" value="Pass123"></label><label class="form-label">Confirm password<input id="val-confirm" type="password" value="Pass321"></label><button class="btn-primary" onclick="runValidationTrainer()">Run ModelState</button></article><article class="panel"><h3>ModelState Output</h3><div id="validation-result" class="result-box"></div></article></div></div></section>`), quiz);
+  main.insertBefore(htmlToElement(`<section class="page" id="efquerylab"><div class="section-pad"><div class="chapter-hero"><span class="eyebrow">13</span><h1>EF Query Builder</h1><p>Compose common EF Core query shapes from the Company and TestDB examples.</p></div><div class="content-grid two"><article class="panel"><h3>Query Options</h3><label class="check-row"><input type="checkbox" id="q-include" checked> Include employees</label><label class="check-row"><input type="checkbox" id="q-filter"> Filter active departments</label><label class="check-row"><input type="checkbox" id="q-order" checked> Order by name</label><label class="check-row"><input type="checkbox" id="q-project"> Project DTO</label><button class="btn-primary" onclick="buildEfQuery()">Build Query</button></article><article class="panel"><h3>Generated EF Core</h3><pre><code id="query-result"></code></pre></article></div></div></section>`), quiz);
+
+  parseMvcRoute();
+  renderMigrationPlan();
+  runValidationTrainer();
+  buildEfQuery();
+}
+
+function htmlToElement(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild;
+}
+
+function parseMvcRoute() {
+  const raw = document.getElementById('route-input')?.value || '/Home/Index';
+  const parts = raw.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+  const controller = parts[0] || 'Home';
+  const action = parts[1] || 'Index';
+  const id = parts[2] || '(none)';
+  document.getElementById('route-result').innerHTML = `
+    <div class="metric"><span>${controller}Controller</span><small>Controller</small></div>
+    <div class="metric"><span>${action}()</span><small>Action</small></div>
+    <div class="metric"><span>${id}</span><small>Optional id</small></div>
+    <p class="muted">Matched pattern: {controller=Home}/{action=Index}/{id?}</p>
+  `;
+}
+
+function renderMigrationPlan() {
+  const choice = document.querySelector('input[name="migration-choice"]:checked')?.value || 'add';
+  const snippets = {
+    add: `// 1. Update model\npublic string? Email { get; set; }\n\n// 2. Create migration\nAdd-Migration AddStudentEmail\n\n// 3. Apply database change\nUpdate-Database`,
+    rename: `// 1. Rename property carefully\npublic string? Major { get; set; }\n\n// 2. Create migration\nAdd-Migration RenameProgramToMajor\n\n// 3. Check generated migration for RenameColumn\nUpdate-Database`,
+    relation: `// 1. Add navigation properties\npublic int DeptId { get; set; }\npublic Department? Department { get; set; }\n\n// 2. Create migration\nAdd-Migration AddDepartmentRelationship\n\n// 3. Apply foreign key\nUpdate-Database`,
+  };
+  document.getElementById('migration-result').textContent = snippets[choice];
+}
+
+function runValidationTrainer() {
+  const errors = [];
+  const first = document.getElementById('val-first').value.trim();
+  const email = document.getElementById('val-email').value.trim();
+  const salary = Number(document.getElementById('val-salary').value);
+  const pass = document.getElementById('val-pass').value;
+  const confirm = document.getElementById('val-confirm').value;
+  if (first.length < 2 || first.length > 20) errors.push('[StringLength] First name must be 2 to 20 characters.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('[EmailAddress] Email format is invalid.');
+  if (Number.isNaN(salary) || salary < 10000 || salary > 50000) errors.push('[Range] Salary must be between 10000 and 50000.');
+  if (pass !== confirm) errors.push('[Compare] Password and confirmation must match.');
+  document.getElementById('validation-result').innerHTML = errors.length
+    ? errors.map(error => `<div class="error-line">${error}</div>`).join('')
+    : '<div class="success-line">ModelState.IsValid == true</div>';
+}
+
+function buildEfQuery() {
+  const lines = ['var query = context.Departments'];
+  if (document.getElementById('q-include').checked) lines.push('    .Include(d => d.employees)');
+  if (document.getElementById('q-filter').checked) lines.push('    .Where(d => d.employees.Any())');
+  if (document.getElementById('q-order').checked) lines.push('    .OrderBy(d => d.DeptName)');
+  if (document.getElementById('q-project').checked) lines.push('    .Select(d => new { d.DeptId, d.DeptName, Count = d.employees.Count() })');
+  lines.push('    .ToList();');
+  document.getElementById('query-result').textContent = lines.join('\n');
+}
+
+injectPracticeLabs();
 renderTopicCards();
 renderEmployees();
 initEmployeeForm();
